@@ -33,14 +33,25 @@
       width: 100%;
     }
   </style>
+  <link rel="stylesheet" href="../static/css/models.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </head>
 
 <body>
+  <div class="navigation">
+    <nav>
+      <ul class="list">
+        <li class="head">Charts</li>
+        <li class="list-item"><a href="/users/models">Home</a></li>
+        <!-- <li class="list-item"><a href="/users/templates">Templates</a></li> -->
+      </ul>
+    </nav>
+  </div>
   <div class="blk">
     <div class="chart-blk">
       <div>
-        <h3>Heading Here</h3>
+        <h3># of words distribution</h3>
       </div>
       <div class="chart">
         <canvas id="barChart"></canvas>
@@ -48,7 +59,7 @@
     </div>
     <div class="chart-blk">
       <div>
-        <h3>Heading Here</h3>
+        <h3>Labels distribution</h3>
       </div>
       <div class="chart">
         <canvas id="pieChart"></canvas>

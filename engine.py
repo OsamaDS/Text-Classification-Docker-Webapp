@@ -20,7 +20,6 @@ class training:
     def __init__(self, df):
         self.lemma_ = WordNetLemmatizer()
         self.df = df
-
         self.df.dropna(inplace=True)
         self.df.drop_duplicates('text',inplace=True)
         self.X = self.df['text']

@@ -1,4 +1,5 @@
 from re import I
+from this import d
 from engine import training
 import csv
 import pickle
@@ -137,64 +138,48 @@ def deploy_upload():
         print('hushhh')
         model_names.append(i['model_name'])
         print(i['model_name'])
-    model_names.append('usama')
+    #model_names.append('usama')
     len_ = len(model_names)
     print(model_names)
     return render_template('deploy_upload.html', len_=len_, values=model_names)
 
 @app.route('/deploy', methods=['GET','POST'])
 def deployfile():
-    # model_collection = mongo.db['models']
+    model_collection = mongo.db['models']
     model_names = []
     if request.method == 'POST':
         if request.files:
-            uploaded_file = request.files['csvfile'] 
-            name_ = request.form.get('name')
+            uploaded_file = request.files['csvfile']   
+            model_name = request.form['btn']
             df = pd.read_csv(uploaded_file)
+            df.dropna(inplace=True)
             coloms = df.columns
             df['text'] = df[coloms[0]]
-            df['label'] = df[coloms[1]]
+            #df['label'] = df[coloms[1]]
 
             print('name2222:',df['text'][0])
-            print('name:',name_)  
-            # user_document = model_collection.find({'username': session['username']})
-            # for i in user_document:
-            #     print('hushhh')
-            #     model_names.append(i['model_name'])
-            #     print(i['model_name'])
-            # model_names.append('usama')
-            # len_ = len(model_names)
-            # print(model_names)
-            # return render_template('model_names.html')
-            return "osama"
-        #request.form['']
-        return "mohsin"
+            #print('name:',name_)  
+            user_model = model_collection.find_one({'username': session['username'], 'model_name': model_name})
+            model_file = user_model['model_file']
+            vect = user_model['model_vectorizer']
+            label_enc = user_model['label_encoder']
+            
+            model = pickle.loads(model_file)
+            vec = pickle.loads(vect)
+            encoder = pickle.loads(label_enc)
 
+            print(user_model['model_name'])
+            res, df_new = modelPredict(model, vec, encoder, df)
+            df_new.to_csv('static/files/results2.csv')
 
+            return redirect(url_for('model_result'))
+            
 @app.route('/model_results', methods=['POST', 'GET'])
 def model_result():
-    json_data = {}
-    if request.method == "POST":
-        model_name = "paki"
-        model_collection = mongo.db['models']
-        user_model = model_collection.find_one(
-            {
-                'username': session['username'],
-                #'model_name': model_name
-            }
-        )
-        model_file = user_model['model_file']
-        vect = user_model['model_vectorizer']
-        label_enc = user_model['label_encoder']
-        
-        model = pickle.loads(model_file)
-        vec = pickle.loads(vect)
-        encoder = pickle.loads(label_enc)
-        print(user_model['model_name'])
-        res = modelPredict(model, vec, encoder)
-        return str(res)
+    return render_template('download.html')
 
-        
+
+
 
 
 
@@ -211,30 +196,36 @@ def chart():
     return render_template('charts.html')
 
 
-def modelPredict(model, vec, encoder):
-    df = pd.read_csv('static/files/IMDB Dataset.csv')
-    #df = df.loc[:5,:]
-    texts = list(df['review'])
+def modelPredict(model, vec, encoder, df):
+    #df = pd.read_csv('static/files/IMDB Dataset.csv')
+    #df = df.loc[5:15,:]
+    texts = list(df['text'])
+    print('len of text: ',len(texts))
     result = []
-    #label = list(df['sentiment'])
-    # for text in texts:
-    text = str(texts[0])
-    text = re.sub('[^a-zA-Z]', " ", text) #remove punctuations and numbers
-    text = re.sub(r"\s+[a-zA-Z]\s+", ' ', text) # Single character removal
-    text = re.sub(r'\s+', " ", text) #remove extra spaces
-    text = text.replace("ain't", "am not").replace("aren't", "are not")
-    text = ' '.join(tex.lower() for tex in text.split(' ')) # Lowering cases
-    #sw = nltk.corpus.stopwords.words('english')
-    #text = ' '.join(tex for tex in text.split() if tex not in sw) #removing stopwords
-    #text = ' '.join(self.lemma_.lemmatize(x) for x in text.split()) #lemmatization
-    #print('text: ',text)
-    text = [text]
-    vector = vec.transform(text)
-    res = model.predict(vector.toarray())
-    res = encoder.inverse_transform(res)
-    #result.append(res)
-    print(res)
-    return res
+    text_input = []
+    for text in texts:
+        text_input.append(text)
+        text = str(text)
+        text = re.sub('[^a-zA-Z]', " ", text) #remove punctuations and numbers
+        text = re.sub(r"\s+[a-zA-Z]\s+", ' ', text) # Single character removal
+        text = re.sub(r'\s+', " ", text) #remove extra spaces
+        text = text.replace("ain't", "am not").replace("aren't", "are not")
+        text = ' '.join(tex.lower() for tex in text.split(' ')) # Lowering cases
+        #sw = nltk.corpus.stopwords.words('english')
+        #text = ' '.join(tex for tex in text.split() if tex not in sw) #removing stopwords
+        #text = ' '.join(self.lemma_.lemmatize(x) for x in text.split()) #lemmatization
+        #print('text: ',text)
+        text = [text]
+        vector = vec.transform(text)
+        res = model.predict(vector.toarray())
+        res = encoder.inverse_transform(res)
+        result.append(res)
+        #text_input.append(inp_text)
+        #print(res)
+    data = {'text':text_input, "predictions":result}
+    df = pd.DataFrame(data)
+    
+    return result, df
 
 if __name__ == '__main__':
     app.secret_key = 'mysecret'

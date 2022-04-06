@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Users</title>
+  <link rel="stylesheet" href="../static/css/signup.css">
+</head>
+
+<body>
+  <div class="sign-blk">
+    <form action="/users" class="form-bg" method="POST">
+      <div class="center">
+        <h4>Sign Up </h4>
+      </div>
+      <div class="group">
+        <div class="mb">
+          <label for="">Username: </label>
+        </div>
+        <div>
+          <input type="text" name="username" id="username" placeholder="Enter Username" class="input">
+        </div>
+      </div>
+      <div class="group">
+        <div class="mb">
+          <label for="">Password: </label>
+        </div>
+        <div>
+          <input type="password" name="password" id="password" placeholder="Enter Password" class="input">
+        </div>
+      </div>
+      <div class="group">
+        <div class="mb">
+          <label for="">Confirm Password: </label>
+        </div>
+        <div>
+          <input type="password" name="confirm_password" id="confirm_password" placeholder="Enter Confirm Password"
+            class="input">
+        </div>
+      </div>
+      <div class="link-group">
+        <button class="btn"><a href="/auth/login">Sign In</a></button>
+        <button class="btn" type="submit">Register</button>
+      </div>
+    </form>
+  </div>
+</body>
+
+</html>

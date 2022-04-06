@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+      box-sizing: border-box;
+    }
+
+    .blk {
+      display: grid;
+      grid-template-columns: auto auto;
+      justify-content: space-evenly;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .chart-blk {
+      width: auto;
+      height: 500px;
+      display: flex;
+      flex-direction: column;
+      gap: 60px;
+      box-shadow: rgb(0 0 0 / 24%) 0px 3px 8px;
+      align-items: center;
+      border-radius: 10px;
+      padding: 15px;
+    }
+
+    .chart {
+      width: 100%;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+  <div class="blk">
+    <div class="chart-blk">
+      <div>
+        <h3>Heading Here</h3>
+      </div>
+      <div class="chart">
+        <canvas id="barChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-blk">
+      <div>
+        <h3>Heading Here</h3>
+      </div>
+      <div class="chart">
+        <canvas id="pieChart"></canvas>
+      </div>
+    </div>
+    <div style="width: 500px;">
+      <!-- // empty div -->
+    </div>
+  </div>
+
+  <script>
+    const bar = document.getElementById('barChart').getContext('2d');
+    const pie = document.getElementById('pieChart').getContext('2d');
+    const barChart = new Chart(bar, {
+      type: 'bar',
+      data: {
+        labels: [
+          {% for item in x2 %}
+                  "{{ item }}",
+                  {% endfor %}
+        ],
+    datasets: [{
+      label: '# of Votes',
+      data: [
+        {% for item in y2 %}
+                  "{{ item }}",
+    {% endfor %}
+    ],
+      backgroundColor: [
+        'rgba(255, 99, 132, 0.2)',
+        'rgba(54, 162, 235, 0.2)',
+        'rgba(255, 206, 86, 0.2)',
+        'rgba(75, 192, 192, 0.2)',
+        'rgba(153, 102, 255, 0.2)',
+        'rgba(255, 159, 64, 0.2)'
+      ],
+        borderWidth: 1
+        }]
+      },
+    });
+    const pieChart = new Chart(pie, {
+      type: 'pie',
+      data: {
+        labels: [
+          {% for item in x %}
+                  "{{ item }}",
+                  {% endfor %}
+        ],
+    datasets: [{
+      label: '# of Votes',
+      data: [
+        {% for item in y %}
+                  "{{ item }}",
+    {% endfor %}
+    ],
+      backgroundColor: [
+        'rgba(255, 99, 132, 0.2)',
+        'rgba(54, 162, 235, 0.2)',
+        'rgba(255, 206, 86, 0.2)',
+        'rgba(75, 192, 192, 0.2)',
+        'rgba(153, 102, 255, 0.2)',
+        'rgba(255, 159, 64, 0.2)'
+      ],
+        borderWidth: 1
+      }]
+    },
+  });
+  </script>
+</body>
+
+</html>

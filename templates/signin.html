@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Users</title>
+  <link rel="stylesheet" href="../static/css/signin.css">
+</head>
+
+<body>
+  <div class="sign-blk">
+    <form action="/login" class="form-bg" method="POST">
+      <div class="center">
+        <h4>Sign in </h4>
+      </div>
+      <div class="group">
+        <div class="mb">
+          <label for="">Username: </label>
+        </div>
+        <div>
+          <input type="text" name="username" id="username" placeholder="Enter Username" class="input">
+        </div>
+      </div>
+      <div class="group">
+        <div class="mb">
+          <label for="">Password: </label>
+        </div>
+        <div>
+          <input type="password" name="password" placeholder="Enter Password" class="input">
+        </div>
+      </div>
+      <div class="link-group">
+        <button class="btn" type="submit">Sign In</button>
+        <button class="btn" type="button"><a href="/auth/register">Sign Up</a></button>
+      </div>
+    </form>
+  </div>
+</body>
+
+</html>

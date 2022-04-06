@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Users</title>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+</head>
+
+
+<body>
+
+    <div id="content">
+        <form action="/deploy" method="POST" enctype="multipart/form-data">
+            <input type="file" name="csvfile" id="csvfile">
+            <!-- <div class="mb">
+                <label for="">Please Enter Model name: </label>
+            </div> -->
+            <!-- <div>
+                <input type="text" name="modelname" placeholder="Enter model name" class="input">
+            </div> -->
+
+
+
+            <div>
+                <button type="submit" onclick="$('#loading').show();">
+                    Upload File
+                </button>
+            </div>
+
+            {%for i in range(0, len_)%}
+            <div>
+                <button name="{{values[i]}}" type="submit">{{values[i]}}</button>
+            </div>
+            <br>
+            {%endfor%}
+
+        </form>
+
+        <div id="loading" style="display:none;"><img src="/static/loading.gif" alt="" />MODEL IS TRAINING PLEASE
+            WAIT!!!!!</div>
+    </div>
+
+    <!-- <div id="loading"></div> -->
+
+</body>
+
+
+</html>

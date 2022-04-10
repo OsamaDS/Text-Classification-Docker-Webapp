@@ -1,10 +1,9 @@
-from re import I
-from this import d
+from importlib_metadata import metadata
 from engine import training
 import csv
 import pickle
 import pandas as pd
-from fileinput import filename
+from gridfs import GridFS
 from flask import Flask, render_template, url_for, request, session, redirect
 import os
 from flask_pymongo import PyMongo
@@ -25,6 +24,9 @@ mongo = PyMongo(app)
 
 #records = db.register
 
+model_fs = GridFS(mongo.db, collection='models')
+vec_fs = GridFS(mongo.db, collection='vectorizer')
+enc_fs = GridFS(mongo.db, collection='encoder')
 
 
 @app.route('/')
@@ -101,22 +103,32 @@ def uploadfile():
             df['text'] = df[coloms[0]]
             df['label'] = df[coloms[1]]
 
+            #df = df.loc[:100,:]
+
             trainer = training(df)
 
             model, vectorizer, encoder = trainer.train_model()
+            # pickle.dump(model, open('modelstate.pickle', 'wb'))
+            # pickle.dump(vectorizer, open('vecstate.pickle', 'wb'))
+            # pickle.dump(encoder, open('encstate.pickle', 'wb'))
             pickle_model = pickle.dumps(model)
             pickle_vectorizer = pickle.dumps(vectorizer)
             pickle_encoder = pickle.dumps(encoder)
 
-            model_collection.insert_one(
-                {
-                    "username": session['username'],
-                    "model_file": pickle_model,
-                    "model_name": model_name,
-                    "model_vectorizer":pickle_vectorizer,
-                    "label_encoder": pickle_encoder
-                }
-            )
+            model_fs.put(pickle_model, filename=session['username'], metadata={'modelname':model_name})
+            vec_fs.put(pickle_vectorizer, filename=session['username'], metadata={'modelname':model_name})
+            enc_fs.put(pickle_encoder, filename=session['username'], metadata={'modelname':model_name})
+                                                            
+
+            # model_collection.insert_one(
+            #     {
+            #         "username": session['username'],
+            #         "model_file": pickle_model,
+            #         "model_name": model_name,
+            #         "model_vectorizer": pickle_vectorizer,
+            #         "label_encoder": pickle_encoder
+            #     }
+            # )
 
             tmp = df['label'].value_counts()
             x = list(tmp.index)
@@ -131,13 +143,22 @@ def uploadfile():
 
 @app.route('/deploy_upload', methods=['GET','POST'])
 def deploy_upload():
-    model_collection = mongo.db['models']
+    #model_collection = mongo.db['models']
+    
+    data = model_fs.find({"filename":session['username']})
+    print('fs_data = ', data)
+
     model_names = []
-    user_document = model_collection.find({'username': session['username']})
-    for i in user_document:
-        print('hushhh')
-        model_names.append(i['model_name'])
-        print(i['model_name'])
+    for d in data:
+        i = d.metadata
+        print('meta:', i['modelname'])
+        model_names.append(i['modelname'])
+    
+    #user_document = model_collection.find({'username': session['username']})
+    # for i in user_document:
+    #     print('hushhh')
+    #     model_names.append(i['model_name'])
+    #     print(i['model_name'])
     #model_names.append('usama')
     len_ = len(model_names)
     print(model_names)
@@ -157,18 +178,40 @@ def deployfile():
             df['text'] = df[coloms[0]]
             #df['label'] = df[coloms[1]]
 
-            print('name2222:',df['text'][0])
-            #print('name:',name_)  
-            user_model = model_collection.find_one({'username': session['username'], 'model_name': model_name})
-            model_file = user_model['model_file']
-            vect = user_model['model_vectorizer']
-            label_enc = user_model['label_encoder']
+            user_model = model_fs.find({"filename":session['username']})
+            user_vec = vec_fs.find({"filename":session['username']})
+            user_enc = enc_fs.find({"filename":session['username']})
+            print('fs_data = ', user_model)
+            # model_file = None
+            # label_enc = None
+            # vect = None
+            for i in user_model:
+                d = i.metadata
+                if d['modelname'] == model_name:
+                    print('d======')
+                    model_file = i.read()
+            for i in user_vec:
+                d = i.metadata
+                if d['modelname'] == model_name:
+                    print('d======')
+                    vect = i.read()
+            for i in user_enc:
+                d = i.metadata
+                if d['modelname'] == model_name:
+                    print('d======')
+                    label_enc = i.read()
+
+
+            # user_model = model_collection.find_one({'username': session['username'], 'model_name': model_name})
+            # model_file = user_model['model_file']
+            # vect = user_model['model_vectorizer']
+            # label_enc = user_model['label_encoder']
             
             model = pickle.loads(model_file)
             vec = pickle.loads(vect)
             encoder = pickle.loads(label_enc)
 
-            print(user_model['model_name'])
+            #print(user_model['model_name'])
             res, df_new = modelPredict(model, vec, encoder, df)
             df_new.to_csv('static/files/results2.csv')
 

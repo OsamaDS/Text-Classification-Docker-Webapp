@@ -8,6 +8,7 @@ from flask import Flask, render_template, url_for, request, session, redirect
 import os
 from flask_pymongo import PyMongo
 import bcrypt
+from bson import ObjectId
 import re
 import nltk
 
@@ -30,11 +31,12 @@ enc_fs = GridFS(mongo.db, collection='encoder')
 
 
 @app.route('/')
-def index():
-    # if 'username' in session:
-    #     return 'You are logged in as ' + session['username']
-
+def index():   
     return render_template('signin.html')
+
+@app.route('/admin')
+def admin():    
+    return render_template('administrator.html')
 
 @app.route('/login', methods=['POST'])
 def login_user():
@@ -46,7 +48,7 @@ def login_user():
         login_user = user_collection.find_one({'username' : username})
 
         if login_user['username'] == "admin" and login_user['password'] == "asdf":
-            return redirect(url_for('index'))
+            return redirect(url_for('admin'))
 
         if login_user:
             if login_user['password'] == password:
@@ -108,9 +110,7 @@ def uploadfile():
             trainer = training(df)
 
             model, vectorizer, encoder = trainer.train_model()
-            # pickle.dump(model, open('modelstate.pickle', 'wb'))
-            # pickle.dump(vectorizer, open('vecstate.pickle', 'wb'))
-            # pickle.dump(encoder, open('encstate.pickle', 'wb'))
+            
             pickle_model = pickle.dumps(model)
             pickle_vectorizer = pickle.dumps(vectorizer)
             pickle_encoder = pickle.dumps(encoder)
@@ -120,15 +120,6 @@ def uploadfile():
             enc_fs.put(pickle_encoder, filename=session['username'], metadata={'modelname':model_name})
                                                             
 
-            # model_collection.insert_one(
-            #     {
-            #         "username": session['username'],
-            #         "model_file": pickle_model,
-            #         "model_name": model_name,
-            #         "model_vectorizer": pickle_vectorizer,
-            #         "label_encoder": pickle_encoder
-            #     }
-            # )
 
             tmp = df['label'].value_counts()
             x = list(tmp.index)
@@ -154,12 +145,6 @@ def deploy_upload():
         print('meta:', i['modelname'])
         model_names.append(i['modelname'])
     
-    #user_document = model_collection.find({'username': session['username']})
-    # for i in user_document:
-    #     print('hushhh')
-    #     model_names.append(i['model_name'])
-    #     print(i['model_name'])
-    #model_names.append('usama')
     len_ = len(model_names)
     print(model_names)
     return render_template('deploy_upload.html', len_=len_, values=model_names)
@@ -182,30 +167,19 @@ def deployfile():
             user_vec = vec_fs.find({"filename":session['username']})
             user_enc = enc_fs.find({"filename":session['username']})
             print('fs_data = ', user_model)
-            # model_file = None
-            # label_enc = None
-            # vect = None
+            
             for i in user_model:
                 d = i.metadata
                 if d['modelname'] == model_name:
-                    print('d======')
                     model_file = i.read()
             for i in user_vec:
                 d = i.metadata
                 if d['modelname'] == model_name:
-                    print('d======')
                     vect = i.read()
             for i in user_enc:
                 d = i.metadata
                 if d['modelname'] == model_name:
-                    print('d======')
                     label_enc = i.read()
-
-
-            # user_model = model_collection.find_one({'username': session['username'], 'model_name': model_name})
-            # model_file = user_model['model_file']
-            # vect = user_model['model_vectorizer']
-            # label_enc = user_model['label_encoder']
             
             model = pickle.loads(model_file)
             vec = pickle.loads(vect)
@@ -221,10 +195,33 @@ def deployfile():
 def model_result():
     return render_template('download.html')
 
+@app.route('/table', methods=['POST', 'GET'])
+def table():
+    temp = model_fs.find()
+    users = []
+    models = []
+    id = []
+    for i in temp:
+        d = i.metadata
+        print('-------------')
+        print('user names:', i.filename)
+        users.append(i.filename)
+        print('model names:', d['modelname'])
+        models.append(d['modelname'])
+        print('-------------')
+        id.append(i._id)
+        print('_ids:', type(i._id))
+    return render_template('table.html', users=users, models=models, id=id, zip=zip)
 
-
-
-
+@app.route('/delete/<user_id>')
+def delete(user_id):
+    print('user_id =', user_id)
+    id = str(user_id)
+    #return render_template('models.html')
+    id = ObjectId(id)
+    model_fs.delete(id)
+    #model_fs.remove({'_id':user_id})
+    return redirect(url_for('table'))
 
 @app.route('/users/models')
 def models():
@@ -272,4 +269,4 @@ def modelPredict(model, vec, encoder, df):
 
 if __name__ == '__main__':
     app.secret_key = 'mysecret'
-    app.run(debug=True)
+    app.run(debug=True, port=8888)

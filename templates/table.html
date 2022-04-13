@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link rel="stylesheet" href="../static/css/table.css">
+</head>
+
+<body>
+  <!-- <form action="/delete" method="POST" enctype="multipart/form-data"> -->
+  <table border="1">
+    <thead>
+      <tr>
+        <th>User ID</th>
+        <th>User name</th>
+        <th>Model name</th>
+      </tr>
+    </thead>
+    <tbody>
+      {%for u,m,i in zip(users, models, id)%}
+      <tr>
+        <td>{{i}}</td>
+        <td>{{u}}</td>
+        <td>{{m}}</td>
+
+        <td>
+          <button type="submit" onclick="$('#loading').show();">
+            Submit
+          </button>
+          <a href="{{url_for('delete',user_id=i)}}">
+            <button type="button">
+              Delete
+            </button>
+          </a>
+        </td>
+      </tr>
+      {%endfor%}
+    </tbody>
+  </table>
+  <!-- </form> -->
+</body>
+
+</html>

@@ -28,6 +28,7 @@ mongo = PyMongo(app)
 model_fs = GridFS(mongo.db, collection='models')
 vec_fs = GridFS(mongo.db, collection='vectorizer')
 enc_fs = GridFS(mongo.db, collection='encoder')
+admin_fs = GridFS(mongo.db, collection='admin')
 
 
 @app.route('/')
@@ -48,6 +49,7 @@ def login_user():
         login_user = user_collection.find_one({'username' : username})
 
         if login_user['username'] == "admin" and login_user['password'] == "asdf":
+            session['username'] = username
             return redirect(url_for('admin'))
 
         if login_user:
@@ -96,6 +98,7 @@ def uploadfile():
     data = []
     model_collection = mongo.db['models']
     #model_collection = mongo.db['vectorizers']
+    print('Sesion user name----------------------:', session['username'])
     if request.method == 'POST':
         if request.files:
             uploaded_file = request.files['csvfile'] 
@@ -105,7 +108,7 @@ def uploadfile():
             df['text'] = df[coloms[0]]
             df['label'] = df[coloms[1]]
 
-            #df = df.loc[:100,:]
+#            df = df.loc[:100,:]
 
             trainer = training(df)
 
@@ -115,11 +118,14 @@ def uploadfile():
             pickle_vectorizer = pickle.dumps(vectorizer)
             pickle_encoder = pickle.dumps(encoder)
 
-            model_fs.put(pickle_model, filename=session['username'], metadata={'modelname':model_name})
+            if session['username']!='admin':
+                model_fs.put(pickle_model, filename=session['username'], metadata={'modelname':model_name})
+            else:
+                admin_fs.put(pickle_model, filename=session['username'], metadata={'modelname':model_name})
+
             vec_fs.put(pickle_vectorizer, filename=session['username'], metadata={'modelname':model_name})
             enc_fs.put(pickle_encoder, filename=session['username'], metadata={'modelname':model_name})
-                                                            
-
+                                                                
 
             tmp = df['label'].value_counts()
             x = list(tmp.index)
@@ -135,9 +141,12 @@ def uploadfile():
 @app.route('/deploy_upload', methods=['GET','POST'])
 def deploy_upload():
     #model_collection = mongo.db['models']
-    
-    data = model_fs.find({"filename":session['username']})
-    print('fs_data = ', data)
+    if session['username'] != 'admin':
+        data = model_fs.find({"filename":session['username']})
+        print('fs_data = ', data)
+    else:
+        data = admin_fs.find({"filename":session['username']})
+        print('fs_data = ', data)
 
     model_names = []
     for d in data:
@@ -161,9 +170,13 @@ def deployfile():
             df.dropna(inplace=True)
             coloms = df.columns
             df['text'] = df[coloms[0]]
-            #df['label'] = df[coloms[1]]
-
-            user_model = model_fs.find({"filename":session['username']})
+            
+            if session['username'] != 'admin':
+                user_model = model_fs.find({"filename":session['username']})
+                print('session username:+++++++++++', session['username'])
+            else:
+                user_model = admin_fs.find({"filename":session['username']})
+                print('session username:+++++++++++', session['username'])    
             user_vec = vec_fs.find({"filename":session['username']})
             user_enc = enc_fs.find({"filename":session['username']})
             print('fs_data = ', user_model)
@@ -190,7 +203,66 @@ def deployfile():
             df_new.to_csv('static/files/results2.csv')
 
             return redirect(url_for('model_result'))
+
+@app.route('/admin_upload', methods=['GET','POST'])
+def admin_upload():
+    #model_collection = mongo.db['models']
+    
+    data = admin_fs.find({"filename":'admin'})
+    print('fs_data = ', data)
+
+    model_names = []
+    for d in data:
+        i = d.metadata
+        print('meta:', i['modelname'])
+        model_names.append(i['modelname'])
+    
+    len_ = len(model_names)
+    print(model_names)
+    return render_template('admin_upload.html', len_=len_, values=model_names)
+
+@app.route('/admin_deploy', methods=['GET','POST'])
+def admin_deployfile():
+    #model_collection = mongo.db['models']
+    model_names = []
+    if request.method == 'POST':
+        if request.files:
+            uploaded_file = request.files['csvfile']   
+            model_name = request.form['btn']
+            df = pd.read_csv(uploaded_file)
+            df.dropna(inplace=True)
+            coloms = df.columns
+            df['text'] = df[coloms[0]]
+        
+            user_model = admin_fs.find({"filename":'admin'})
+            print('session username:+++++++++++', session['username'])    
+            user_vec = vec_fs.find({"filename":'admin'})
+            user_enc = enc_fs.find({"filename":'admin'})
+            print('fs_data = ', user_model)
             
+            for i in user_model:
+                d = i.metadata
+                if d['modelname'] == model_name:
+                    model_file = i.read()
+            for i in user_vec:
+                d = i.metadata
+                if d['modelname'] == model_name:
+                    vect = i.read()
+            for i in user_enc:
+                d = i.metadata
+                if d['modelname'] == model_name:
+                    label_enc = i.read()
+            
+            model = pickle.loads(model_file)
+            vec = pickle.loads(vect)
+            encoder = pickle.loads(label_enc)
+
+            #print(user_model['model_name'])
+            res, df_new = modelPredict(model, vec, encoder, df)
+            df_new.to_csv('static/files/results2.csv')
+
+            return redirect(url_for('model_result'))
+
 @app.route('/model_results', methods=['POST', 'GET'])
 def model_result():
     return render_template('download.html')
@@ -222,6 +294,12 @@ def delete(user_id):
     model_fs.delete(id)
     #model_fs.remove({'_id':user_id})
     return redirect(url_for('table'))
+
+
+@app.route('/admin/models')
+def admin_modls():
+    return render_template('upload.html')
+
 
 @app.route('/users/models')
 def models():

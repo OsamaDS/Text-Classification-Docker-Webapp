@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Users</title>
+    <link rel="stylesheet" href="../static/css/models.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+</head>
+
+
+<body>
+    <div class="navigation">
+        <nav>
+            <ul class="list">
+                <li class="head">Select file and model</li>
+                <li class="list-item"><a href="/users/models">Home</a></li>
+                <!-- <li class="list-item"><a href="/users/templates">Templates</a></li> -->
+            </ul>
+        </nav>
+    </div>
+    <br>
+
+    <h1>Select Admin templates or Models for prediction</h1>
+    <br>
+
+    <div id="content">
+        <form action="/admin_deploy" method="POST" enctype="multipart/form-data">
+            <input type="file" name="csvfile" id="csvfile">
+
+            <br>
+            <br>
+            <h3>Please select models below</h3>
+            <br>
+            <select name="btn" type="submit">
+                {%for i in range(0, len_)%}
+                <!-- <div> -->
+                <option value="{{values[i]}}">
+                    {{values[i]}}
+                </option>
+                <!-- </div> -->
+                <!-- "{{values[i]}}" -->
+                <!-- <br> -->
+                {%endfor%}
+
+            </select>
+            <br>
+            <br>
+            <div>
+                <button type="submit" onclick="$('#loading').show();">
+                    Submit
+                </button>
+            </div>
+        </form>
+
+        <div id="loading" style="display:none;"><img src="/static/loading.gif" alt="" />MODEL IS PREDICTING PLEASE
+            WAIT!!!!!</div>
+    </div>
+
+    <!-- <div id="loading"></div> -->
+
+</body>
+
+
+</html>

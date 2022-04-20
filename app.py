@@ -15,8 +15,8 @@ import nltk
 app = Flask(__name__)
 app.secret_key = "testing"
 app.config["SECRET_KEY"]
-app.config['MONGO_URI'] = 'mongodb://localhost:27017/sandeep_db'
-app.config['FILE_UPLOADS'] = "C:\\Users\\Osama\\Downloads\\Sandeep Project\\App\\static\\files"
+app.config['MONGO_URI'] = 'mongodb://sandeep_mongodb:27017/sandeep_db'
+#app.config['FILE_UPLOADS'] = "C:\\Users\\Osama\\Downloads\\Sandeep Project\\App\\static\\files"
 mongo = PyMongo(app)
 
 #client = pymongo.MongoClient("mongodb://localhost:27017")
@@ -338,8 +338,7 @@ def modelPredict(model, vec, encoder, df):
         res = model.predict(vector.toarray())
         res = encoder.inverse_transform(res)
         result.append(res)
-        #text_input.append(inp_text)
-        #print(res)
+
     data = {'text':text_input, "predictions":result}
     df = pd.DataFrame(data)
     
@@ -347,4 +346,4 @@ def modelPredict(model, vec, encoder, df):
 
 if __name__ == '__main__':
     app.secret_key = 'mysecret'
-    app.run(debug=True, port=8888)
+    app.run(host='0.0.0.0', port=5000)

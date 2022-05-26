@@ -1,7 +1,8 @@
 # Text-Classification-Docker-Webapp
-First of all create python environment or conda environment using following command </br>
+First of all create python environment or conda environment using following command and then activate the environemnt</br>
 
                  conda create -n webapp python==3.7
+                 conda activate webapp
                  
 Run following command to install all necessary packages </br>
 
